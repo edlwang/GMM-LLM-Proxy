@@ -45,15 +45,13 @@ def sample_GMM(mixture_weights: np.ndarray, mixture_means: np.ndarray,
     return samples
 
 def update_GMM(data: np.ndarray, mixture_weights: np.ndarray, 
-               mixture_means: np.ndarray, mixture_stddev: np.ndarray, 
-               num_EM_steps: int, epsilon: float = 1e-12
-               ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Update the Gaussian Mixture Model (GMM) via EM algorithm
+               mixture_means: np.ndarray, mixture_stddev: np.ndarray
+               , epsilon: float = 1e-12) -> np.ndarray:
+    """Update the weights of the Gaussian Mixture Model (GMM) via EM algorithm
 
     Given a GMM specified by the weights on each component and the mean and
     standard deviations associated with each Gaussian component, return the new
-    weights, means, and standard deviations after a specified number of steps of
-    the EM algorithm on given data. 
+    weights after one step of the EM algorithm.  
 
     Args:
         data: A 1-D numpy array of real numbers representing the new data used
@@ -69,15 +67,11 @@ def update_GMM(data: np.ndarray, mixture_weights: np.ndarray,
             representing the initial standard deviation of each Gaussian 
             component. The kth entry `mixture_stddev[k]` is the standard 
             deviation of the kth Gaussian component.
-        num_EM_steps: A positive integer indicating the number of steps to run
-            the EM algorithm
         epsilon: A small positive real number to truncate zero values to so 
             operations are well-conditioned. 
 
     Returns:
-        A 3-tuple (updated_weights, updated_means, updated_stddev) of the 
-        updated weights, means, and standard deviations for the Gaussian mixture 
-        model, after running EM algorithm on the specified data.  
+        The updated weights of the Gaussian Mixture Model
     """
     num_components = len(mixture_weights)
     num_data_points = len(data)
@@ -89,15 +83,16 @@ def update_GMM(data: np.ndarray, mixture_weights: np.ndarray,
     zero_indices = np.where(mixture_weights==0)
     updated_weights[zero_indices] = epsilon
 
-    # EM Algorithm
-    for _ in range(num_EM_steps):
-        data_posterior = np.zeros((num_components, num_data_points))
-        for idx, data_point in enumerate(data):
-            # compute likelihood of drawing the data point from each component
-            data_posterior[:, idx] = updated_weights * norm.pdf(
-                data_point, updated_means, updated_stddev)
-            # normalize
-            data_posterior[:, idx] /= np.sum(data_posterior[:, idx])
-    # TODO: Complete
-
-    return (updated_weights, updated_means, updated_stddev)
+    # Compute updated weights using EM 
+    data_posterior = np.zeros((num_components, num_data_points))
+    for idx, data_point in enumerate(data):
+        # compute likelihood of drawing the data point from each component
+        data_posterior[:, idx] = updated_weights * norm.pdf(
+            data_point, updated_means, updated_stddev)
+        # normalize
+        data_posterior[:, idx] /= np.sum(data_posterior[:, idx])
+    updated_weights = np.sum(data_posterior, axis=1).clip(
+        max=1/epsilon, min=epsilon)
+    updated_weights[np.isnan(updated_weights)] = epsilon
+    updated_weights /= np.sum(updated_weights)
+    return updated_weights
