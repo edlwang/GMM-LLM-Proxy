@@ -71,7 +71,7 @@ def update_GMM(data: np.ndarray, mixture_weights: np.ndarray,
             operations are well-conditioned. 
 
     Returns:
-        The updated weights of the Gaussian Mixture Model
+        The updated weights of the Gaussian Mixture Model.
     """
     num_components = len(mixture_weights)
     num_data_points = len(data)
@@ -96,3 +96,83 @@ def update_GMM(data: np.ndarray, mixture_weights: np.ndarray,
     updated_weights[np.isnan(updated_weights)] = epsilon
     updated_weights /= np.sum(updated_weights)
     return updated_weights
+
+def gmm_distance(GMM_1_weights: np.ndarray, GMM_2_weights: np.ndarray
+                 ) -> np.floating:
+    """Compute the distance between two GMMs to determine nearest neighbors
+
+    Since we only update the mixture weights, we consider the distance between
+    two Gaussian Mixture Models to be the Euclidean distance between their 
+    weight vectors.
+
+    Args:
+        GMM_1_weights: A 1-D numpy array representing the mixture weights for
+            the first GMM.
+        GMM_2_weights: A 1-D numpy array representing the mixture weights for
+            the second GMM.
+
+    Returns:
+        A nonnegative float representing the Euclidean distance between the
+        weight vectors. 
+    """
+    return np.linalg.norm(GMM_1_weights-GMM_2_weights, ord='fro')
+
+def generate_distance_matrix(weight_matrix: np.ndarray) -> np.ndarray:
+    """Compute the NxN matrix of pairwise distances between N GMMs with weights
+    specified by the weight matrix.
+
+    Args:
+        weight_matrix: An Nxd matrix containing the weights of N GMMs with d
+            components each. `weight_matrix[i][j]` specifies the weight of the 
+            jth component in the ith GMM.
+
+    Returns:
+        A symmetric NxN matrix where `distance_matrix[i][j]` specifies the 
+        distance between the ith and jth GMM.  
+    """
+    num_GMMs, _ = weight_matrix.shape
+    distance_matrix = np.zeros((num_GMMs, num_GMMs))
+    for i in range(num_GMMs):
+        for j in range(i+1, num_GMMs):
+            distance_matrix[i][j] = gmm_distance(weight_matrix[i, :], 
+                                                 weight_matrix[j, :])
+            distance_matrix[j][i] = distance_matrix[i][j]
+    return distance_matrix
+
+def experiment(time_steps: int, mirror_probability: float,
+               num_nearest_neighbors: int, RAG_size: int, 
+               initial_gmm_weights: np.ndarray, gmm_means: np.ndarray, 
+               gmm_stddev: np.ndarray, seed: int | None = None
+               ) -> list[np.ndarray]:
+    """Conduct an instance of the GMM experiment as described in the paper.
+
+    Args:
+        time_steps: A nonnegative integer representing the number of time steps
+            to run the simulation for.
+        mirror_probability: A float between 0 and 1 representing the probability
+            an agent will "mirror" during its interaction step and query itself.
+        num_nearest_neighbors: An integer between 1 and the number of agents-1
+            representing the number of nearest neighbors to consider when
+            conducting an interaction step without mirroring
+        RAG_size: A positive integer representing the number of elements in the
+            RAG set. 
+        initial_gmm_weights: A matrix of size Nxd consisting of the initial
+            weights for the agents in the experiment. 
+            `initial_gmm_weights[i][j]` represents the initial weight of the jth
+            component of the ith GMM.
+        gmm_means: A matrix of size d consisting of the fixed means for each 
+            Gaussian component for all GMMs.
+        gmm_stddev: A matrix of size d consisting of the fixed standard
+            standard deviations for each Gaussian component for all GMMs.
+        seed: An optional parameter allowing the seed for the random number
+            generator to be set.
+    """
+    if seed is not None:
+        _rng = np.random.default_rng(seed)
+
+    num_agents, _ = initial_gmm_weights.shape
+
+
+    gmm_weights_history = [initial_gmm_weights]
+
+    return gmm_weights_history
