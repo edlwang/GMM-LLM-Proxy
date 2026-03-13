@@ -73,6 +73,10 @@ def update_GMM(data: np.ndarray, mixture_weights: np.ndarray,
     Returns:
         The updated weights of the Gaussian Mixture Model.
     """
+    # TODO: Vince wants a figure where variances update too, so the M-step needs
+    # to be done, function signature will have to change to compensate; 
+    # please use informative variable names where possible 
+    # names = documentation
     num_components = len(mixture_weights)
     num_data_points = len(data)
 
@@ -167,6 +171,8 @@ def experiment(time_steps: int, mirror_probability: float,
         seed: An optional parameter allowing the seed for the random number
             generator to be set.
     """
+    # TODO: Finish implementation of the experiment loop; rewrite needs to
+    # address initialization concerns. 
     if seed is not None:
         _rng = np.random.default_rng(seed)
 
@@ -176,3 +182,8 @@ def experiment(time_steps: int, mirror_probability: float,
     gmm_weights_history = [initial_gmm_weights]
 
     return gmm_weights_history
+
+if __name__ == '__main__':
+    # TODO: We can keep experiments in here, or export this file to implement
+    # the running of experiments in other dedicated files
+    print("")
