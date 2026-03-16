@@ -119,7 +119,7 @@ def gmm_distance(GMM_1_weights: np.ndarray, GMM_2_weights: np.ndarray
         A nonnegative float representing the Euclidean distance between the
         weight vectors. 
     """
-    return np.linalg.norm(GMM_1_weights-GMM_2_weights, ord='fro')
+    return np.linalg.norm(GMM_1_weights-GMM_2_weights)
 
 def generate_distance_matrix(weight_matrix: np.ndarray) -> np.ndarray:
     """Compute the NxN matrix of pairwise distances between N GMMs with weights
@@ -188,6 +188,20 @@ if __name__ == '__main__':
     # the running of experiments in other dedicated files
     print("")
 
-    print(sample_GMM(np.array([1/3,1/2,1/6]), np.array([-1, 0, 1]), np.array([0.2, 0.2, 0.2]), 10))
+    # testing sample_GMM function
+    # print(sample_GMM(np.array([1/3,1/2,1/6]), np.array([-1, 0, 1]), np.array([0.2, 0.2, 0.2]), 10))
 
-    print(update_GMM(np.array([0.5, 0.9, -1]), np.array([1/3,1/2,1/6]), np.array([-1, 0, 1]), np.array([0.2, 0.2, 0.2])))
+    # testing update_GMM function
+    # print(update_GMM(np.array([0.5, 0.9, -1]), np.array([1/3,1/2,1/6]), np.array([-1, 0, 1]), np.array([0.2, 0.2, 0.2])))
+    
+    # testing gmm_distance function
+    # print(gmm_distance(np.array([1/3, 1/2, 1/6]), np.array([0, 1/3, 2/3])))
+    # print((1/3 * 1/3 + 1/6 * 1/6 + 1/2*1/2) ** (1/2))
+
+    # testing generate_distance_matrix function
+    # weights = np.array([
+    #    [1.0, 0.0],  # GMM 0
+    #    [0.5, 0.5],  # GMM 1
+    #    [0.0, 1.0]   # GMM 2
+    #])
+    # print(generate_distance_matrix(weights))
