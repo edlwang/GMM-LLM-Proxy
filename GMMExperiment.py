@@ -81,9 +81,11 @@ def update_GMM(data: np.ndarray, mixture_weights: np.ndarray,
     updated_weights = np.copy(mixture_weights)
     updated_means = np.copy(mixture_means)
     updated_stddev = np.copy(mixture_stddev)
-    # Truncate to epsilon
-    zero_indices = np.where(mixture_weights==0)
-    updated_weights[zero_indices] = epsilon
+
+    # Clip the weights
+    updated_weights = np.clip(mixture_weights, epsilon, 1 - epsilon)
+    # Renormalize so they sum to 1 again
+    updated_weights /= updated_weights.sum()
 
     # Compute updated weights using EM 
     data_posterior = np.zeros((num_components, num_data_points))
@@ -93,8 +95,8 @@ def update_GMM(data: np.ndarray, mixture_weights: np.ndarray,
             data_point, updated_means, updated_stddev)
         # normalize
         data_posterior[:, idx] /= np.sum(data_posterior[:, idx])
-    updated_weights = np.sum(data_posterior, axis=1).clip(
-        max=1/epsilon, min=epsilon)
+    updated_weights = np.mean(data_posterior, axis=1).clip(
+        max=1 - epsilon, min=epsilon)
     updated_weights[np.isnan(updated_weights)] = epsilon
     updated_weights /= np.sum(updated_weights)
     return updated_weights
@@ -187,3 +189,5 @@ if __name__ == '__main__':
     print("")
 
     print(sample_GMM(np.array([1/3,1/2,1/6]), np.array([-1, 0, 1]), np.array([0.2, 0.2, 0.2]), 10))
+
+    print(update_GMM(np.array([0.5, 0.9, -1]), np.array([1/3,1/2,1/6]), np.array([-1, 0, 1]), np.array([0.2, 0.2, 0.2])))
