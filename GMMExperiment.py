@@ -179,7 +179,6 @@ def experiment(time_steps: int, mirror_probability: float,
 
     num_agents, _ = initial_gmm_weights.shape
 
-
     gmm_weights_history = [initial_gmm_weights]
     inital_rag = np.zeros((num_agents, RAG_size))
 
@@ -252,5 +251,4 @@ if __name__ == '__main__':
     #    [0.0, 1.0]   # GMM 2
     #])
     # print(generate_distance_matrix(weights))
-    
-    # experiment(10, 0, 3, 10, np.array([[1/3, 1/2, 1/6], [1/2, 1/4, 1/4], [0.05, 2/3-0.05, 1/3], [0,0,1], [0,1,0],[1,0,0]]), np.array([-1, 0, 1]), np.array([0.2, 0.2, 0.2]))
+
