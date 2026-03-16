@@ -34,14 +34,12 @@ def sample_GMM(mixture_weights: np.ndarray, mixture_means: np.ndarray,
         samples from the specified GMM distribution.
     """
     num_components = len(mixture_weights)
-    samples = np.zeros(num_samples)
-    for idx in range(num_components):
-        # First sample all the Gaussian components
-        component = _rng.choice(a=num_components, size=num_samples, 
+    # First sample all the Gaussian components
+    component = _rng.choice(a=num_components, size=num_samples, 
                                 p=mixture_weights)
-        # Next sample from the normal distribution defined by the Gaussian
-        samples[idx] = _rng.normal(loc=mixture_means[component], 
-                                   scale=mixture_stddev[component])
+    # Next sample from the normal distribution defined by the Gaussian
+    samples = _rng.normal(loc=mixture_means[component], 
+                                scale=mixture_stddev[component])
     return samples
 
 def update_GMM(data: np.ndarray, mixture_weights: np.ndarray, 
@@ -187,3 +185,5 @@ if __name__ == '__main__':
     # TODO: We can keep experiments in here, or export this file to implement
     # the running of experiments in other dedicated files
     print("")
+
+    print(sample_GMM(np.array([1/3,1/2,1/6]), np.array([-1, 0, 1]), np.array([0.2, 0.2, 0.2]), 10))
