@@ -184,12 +184,13 @@ def experiment(time_steps: int, mirror_probability: float,
 
     # initialization
     for i in range(num_agents):
-        inital_rag[i:] = sample_GMM(initial_gmm_weights[i], gmm_means, gmm_stddev, RAG_size)
+        inital_rag[i:] = sample_GMM(initial_gmm_weights[i], gmm_means, 
+                                    gmm_stddev, RAG_size)
 
     gmm_rag_history = [inital_rag]
 
     # interaction
-    for t in range(1, time_steps + 1):
+    for t in range(1, time_steps+1):
         distance_matrix = generate_distance_matrix(gmm_weights_history[t-1])
         weight_t = np.zeros_like(initial_gmm_weights)
         rag_t = np.zeros((num_agents, RAG_size))
@@ -199,31 +200,39 @@ def experiment(time_steps: int, mirror_probability: float,
                 j = i
             else:
                 row_distances = distance_matrix[i]
-                closest_indices = np.argpartition(row_distances, num_nearest_neighbors)[:num_nearest_neighbors + 1]
-                closest_indices = closest_indices[closest_indices != i][:num_nearest_neighbors]
+                closest_indices = np.argpartition(
+                    row_distances, num_nearest_neighbors
+                )[:num_nearest_neighbors+1]
+                closest_indices = closest_indices[closest_indices!=i][
+                :num_nearest_neighbors]
                 j = _rng.choice(closest_indices)
             # query
-            x = sample_GMM(gmm_weights_history[t-1][i], gmm_means, gmm_stddev, 1)[0]
+            x = sample_GMM(gmm_weights_history[t-1][i], 
+                           gmm_means, gmm_stddev, 1)[0]
 
             # pseudo-update
-            temp_rag = gmm_rag_history[t - 1][j].copy()
-            distances_to_x = [(x - rag_member) ** 2 for rag_member in temp_rag]
+            temp_rag = gmm_rag_history[t-1][j].copy()
+            distances_to_x = [np.linalg.norm(x-rag_member) 
+                for rag_member in temp_rag]
             furthest_pos = np.argmax(distances_to_x)
             temp_rag[furthest_pos] = x
 
-            temp_weight = update_GMM(temp_rag, gmm_weights_history[t-1][j], gmm_means, gmm_stddev)
+            temp_weight = update_GMM(temp_rag, gmm_weights_history[t-1][j], 
+                                     gmm_means, gmm_stddev)
 
             # answer
             y = sample_GMM(temp_weight, gmm_means, gmm_stddev, 1)[0]
 
             # RAG update
-            new_rag = gmm_rag_history[t - 1][i].copy()
-            distances_to_y = [(y - rag_member) ** 2 for rag_member in new_rag]
+            new_rag = gmm_rag_history[t-1][i].copy()
+            distances_to_y = [np.linalg.norm(y-rag_member) 
+                for rag_member in new_rag]
             furthest_pos = np.argmax(distances_to_y)
             new_rag[furthest_pos] = y
             rag_t[i] = new_rag
 
-            new_weight = update_GMM(new_rag, gmm_weights_history[t-1][i], gmm_means, gmm_stddev)
+            new_weight = update_GMM(new_rag, gmm_weights_history[t-1][i],
+                                    gmm_means, gmm_stddev)
             weight_t[i] = new_weight
         gmm_weights_history.append(weight_t)
         gmm_rag_history.append(rag_t)
