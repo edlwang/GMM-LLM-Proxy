@@ -1,6 +1,6 @@
 # Imports
 import numpy as np
-from scipy.stats import norm
+from scipy.stats import norm, multivariate_normal
 
 # Global Random Number Generator
 _rng = np.random.default_rng(1)
@@ -36,11 +36,50 @@ def sample_GMM(mixture_weights: np.ndarray, mixture_means: np.ndarray,
     num_components = len(mixture_weights)
     # First sample all the Gaussian components
     component = _rng.choice(a=num_components, size=num_samples, 
-                                p=mixture_weights)
+                            p=mixture_weights)
     # Next sample from the normal distribution defined by the Gaussian
     samples = _rng.normal(loc=mixture_means[component], 
                           scale=mixture_stddev[component])
     return samples
+
+def sample_multiGMM(mixture_weights: np.ndarray, mixture_means: np.ndarray, 
+                    mixture_cov: np.ndarray, num_samples: int) -> np.ndarray:
+    """Sample points from a multivariate Gaussian Mixture Model (GMM).
+
+    Given a GMM specified by the weights on each component and the mean and 
+    covariance matrix associated with each Gaussian component, sample a 
+    specified number of points from the GMM. 
+    
+    Args:
+        mixture_weights: A 1-D numpy array of nonnegative real numbers that sums
+            to 1, representing the weights for each Gaussian component. The kth
+            entry `mixture_weights[k]` is the weight associated with the kth 
+            component.
+        mixture_means: A 2-D numpy array of real numbers, where the rows 
+            represent the mean of the Gaussian components. The kth entry 
+            `mixture_means[k,:]` is the mean of the kth Gaussian component.
+        mixture_cov: A 3-D numpy array of nonnegative real numbers
+            representing the covariance matrix of each Gaussian component. The
+            kth entry `mixture_stddev[k,:,:]` is the covariance matrix of the 
+            kth Gaussian component.
+        num_samples: A positive integer representing the number of samples to
+            generate.
+
+    Returns:
+        A 2-D numpy array with `num_samples` rows, where each row is an 
+        independent and identically distributed sample from the specified 
+        GMM distribution.
+    """
+    num_components = len(mixture_weights)
+    # First sample all the Gaussian components
+    components = _rng.choice(a=num_components, size=num_samples, 
+                             p=mixture_weights)
+    # Next sample from the normal distribution defined by the Gaussian
+    samples = []
+    for _, component in enumerate(components):
+        samples.append(_rng.multivariate_normal(mean=mixture_means[component], 
+                                                cov=mixture_cov[component]))
+    return np.array(samples)
 
 def update_GMM(data: np.ndarray, mixture_weights: np.ndarray, 
                mixture_means: np.ndarray, mixture_stddev: np.ndarray
@@ -100,7 +139,62 @@ def update_GMM(data: np.ndarray, mixture_weights: np.ndarray,
     updated_weights[np.isnan(updated_weights)] = epsilon
     updated_weights /= np.sum(updated_weights)
     return updated_weights
+def update_multiGMM(data: np.ndarray, mixture_weights: np.ndarray, 
+               mixture_means: np.ndarray, mixture_cov: np.ndarray
+               , epsilon: float = 1e-12) -> np.ndarray:
+    """Update the weights of the multivariate Gaussian Mixture Model (GMM) via 
+    EM algorithm
 
+    Given a GMM specified by the weights on each component and the mean and
+    covariances associated with each Gaussian component, return the new weights
+    after one step of the EM algorithm.  
+
+    Args:
+        data: A 2-D numpy array of real numbers representing the new data used
+            to update the GMM, where each row is a data point. 
+        mixture_weights: A 1-D numpy array of nonnegative real numbers that sums
+            to 1, representing the initial weights for each Gaussian component. 
+            The kth entry `mixture_weights[k]` is the weight associated with the 
+            kth component.
+        mixture_means: A 2-D numpy array of real numbers representing the 
+            initial mean of each Gaussian component. The kth row 
+            `mixture_means[k, :]` is the mean of the kth Gaussian component.
+        mixture_stddev: A 3-D numpy array of nonnegative real numbers
+            representing the initial covariance of each Gaussian 
+            component. The kth entry `mixture_stddev[k, :, :]` is the covariance 
+            of the kth Gaussian component.
+        epsilon: A small positive real number to truncate zero values to so 
+            operations are well-conditioned. 
+
+    Returns:
+        The updated weights of the multivariate Gaussian Mixture Model.
+    """
+    num_components = len(mixture_weights)
+    num_data_points = data.shape[0]
+
+    updated_weights = np.copy(mixture_weights)
+    updated_means = np.copy(mixture_means)
+    updated_cov = np.copy(mixture_cov)
+
+    # Clip the weights
+    updated_weights = np.clip(mixture_weights, epsilon, 1 - epsilon)
+    # Renormalize so they sum to 1 again
+    updated_weights /= updated_weights.sum()
+
+    # Compute updated weights using EM 
+    data_posterior = np.zeros((num_components, num_data_points))
+    for idx, data_point in enumerate(data):
+        # compute likelihood of drawing the data point from each component
+        for component in range(num_components):
+            data_posterior[component, idx] = updated_weights[component] * multivariate_normal.pdf(data_point, updated_means[component], 
+                                        updated_cov[component])
+        # normalize
+        data_posterior[:, idx] /= np.sum(data_posterior[:, idx])
+    updated_weights = np.mean(data_posterior, axis=1).clip(
+        max=1-epsilon, min=epsilon)
+    updated_weights[np.isnan(updated_weights)] = epsilon
+    updated_weights /= np.sum(updated_weights)
+    return updated_weights
 def gmm_distance(GMM_1_weights: np.ndarray, GMM_2_weights: np.ndarray
                  ) -> np.floating:
     """Compute the distance between two GMMs to determine nearest neighbors
@@ -180,14 +274,14 @@ def experiment(time_steps: int, mirror_probability: float,
     num_agents, _ = initial_gmm_weights.shape
 
     gmm_weights_history = [initial_gmm_weights]
-    inital_rag = np.zeros((num_agents, RAG_size))
+    initial_rag = np.zeros((num_agents, RAG_size))
 
     # initialization
     for i in range(num_agents):
-        inital_rag[i:] = sample_GMM(initial_gmm_weights[i], gmm_means, 
+        initial_rag[i:] = sample_GMM(initial_gmm_weights[i], gmm_means, 
                                     gmm_stddev, RAG_size)
 
-    gmm_rag_history = [inital_rag]
+    gmm_rag_history = [initial_rag]
 
     # interaction
     for t in range(1, time_steps+1):
@@ -238,6 +332,102 @@ def experiment(time_steps: int, mirror_probability: float,
         gmm_rag_history.append(rag_t)
     return gmm_weights_history
 
+def multi_experiment(time_steps: int, mirror_probability: float,
+               num_nearest_neighbors: int, RAG_size: int, 
+               initial_gmm_weights: np.ndarray, gmm_means: np.ndarray, 
+               gmm_cov: np.ndarray, seed: int | None = None
+               ) -> list[np.ndarray]:
+    """Conduct an instance of the GMM experiment as described in the paper in
+    the multivariate setting.
+
+    Args:
+        time_steps: A nonnegative integer representing the number of time steps
+            to run the simulation for.
+        mirror_probability: A float between 0 and 1 representing the probability
+            an agent will "mirror" during its interaction step and query itself.
+        num_nearest_neighbors: An integer between 1 and the number of agents-1
+            representing the number of nearest neighbors to consider when
+            conducting an interaction step without mirroring
+        RAG_size: A positive integer representing the number of elements in the
+            RAG set. 
+        initial_gmm_weights: A matrix of size Nxd consisting of the initial
+            weights for the agents in the experiment. 
+            `initial_gmm_weights[i][j]` represents the initial weight of the jth
+            component of the ith GMM.
+        gmm_means: A matrix consisting of the fixed means for 
+            each Gaussian component for all GMMs.
+        gmm_cov: A tensor consisting of the 
+            fixed covariances for each Gaussian component for all GMMs.
+        seed: An optional parameter allowing the seed for the random number
+            generator to be set.
+    """
+    # TODO: Finish implementation of the experiment loop; rewrite needs to
+    # address initialization concerns. 
+    global _rng
+    if seed is not None:
+        _rng = np.random.default_rng(seed)
+
+    num_agents, dim = gmm_means.shape
+
+    gmm_weights_history = [initial_gmm_weights]
+    initial_rag = np.zeros((num_agents, RAG_size, dim))
+
+    # initialization
+    for i in range(num_agents):
+        initial_rag[i, :, :] = sample_multiGMM(initial_gmm_weights[i], 
+                                              gmm_means, gmm_cov, 
+                                              RAG_size)
+
+    gmm_rag_history = [initial_rag]
+
+    # interaction
+    for t in range(1, time_steps+1):
+        distance_matrix = generate_distance_matrix(gmm_weights_history[t-1])
+        weight_t = np.zeros_like(initial_gmm_weights)
+        rag_t = np.zeros((num_agents, RAG_size, dim))
+        for i in range(num_agents):
+            u = _rng.random()
+            if u < mirror_probability:
+                j = i
+            else:
+                row_distances = distance_matrix[i]
+                closest_indices = np.argpartition(
+                    row_distances, num_nearest_neighbors
+                )[:num_nearest_neighbors+1]
+                closest_indices = closest_indices[closest_indices!=i][
+                :num_nearest_neighbors]
+                j = _rng.choice(closest_indices)
+            # query
+            x = sample_multiGMM(gmm_weights_history[t-1][i], 
+                           gmm_means, gmm_cov, 1)[0]
+
+            # pseudo-update
+            temp_rag = gmm_rag_history[t-1][j].copy()
+            distances_to_x = [np.linalg.norm(x-temp_rag[rag_idx]) 
+                for rag_idx in range(RAG_size)]
+            furthest_pos = np.argmax(distances_to_x)
+            temp_rag[furthest_pos] = x
+
+            temp_weight = update_multiGMM(temp_rag, gmm_weights_history[t-1][j], 
+                                     gmm_means, gmm_cov)
+
+            # answer
+            y = sample_multiGMM(temp_weight, gmm_means, gmm_cov, 1)[0]
+
+            # RAG update
+            new_rag = gmm_rag_history[t-1][i].copy()
+            distances_to_y = [np.linalg.norm(y-new_rag[rag_idx]) 
+                for rag_idx in range(RAG_size)]
+            furthest_pos = np.argmax(distances_to_y)
+            new_rag[furthest_pos] = y
+            rag_t[i] = new_rag
+
+            new_weight = update_multiGMM(new_rag, gmm_weights_history[t-1][i],
+                                    gmm_means, gmm_cov)
+            weight_t[i] = new_weight
+        gmm_weights_history.append(weight_t)
+        gmm_rag_history.append(rag_t)
+    return gmm_weights_history
 if __name__ == '__main__':
     # TODO: We can keep experiments in here, or export this file to implement
     # the running of experiments in other dedicated files
@@ -245,9 +435,15 @@ if __name__ == '__main__':
 
     # testing sample_GMM function
     # print(sample_GMM(np.array([1/3,1/2,1/6]), np.array([-1, 0, 1]), np.array([0.2, 0.2, 0.2]), 10))
+    # print(sample_multiGMM(np.array([1/3,1/2,1/6]), 
+    # np.array([[10,10], [10,0], [0,10]]), 
+    # np.array([[[1,0], [0,1]], [[1,0], [0,1]], [[1,0], [0,1]]]), 10))
 
     # testing update_GMM function
     # print(update_GMM(np.array([0.5, 0.9, -1]), np.array([1/3,1/2,1/6]), np.array([-1, 0, 1]), np.array([0.2, 0.2, 0.2])))
+    #print(update_multiGMM(np.array([[1,0],[0,1], [1,1]]), np.array([1/3,1/2,1/6]), 
+    #np.array([[1,1], [1,0], [0,1]]), 
+    #np.array([[[1,0], [0,1]], [[1,0], [0,1]], [[1,0], [0,1]]])))
     
     # testing gmm_distance function
     # print(gmm_distance(np.array([1/3, 1/2, 1/6]), np.array([0, 1/3, 2/3])))
