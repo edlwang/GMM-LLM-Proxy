@@ -39,7 +39,7 @@ def sample_GMM(mixture_weights: np.ndarray, mixture_means: np.ndarray,
                                 p=mixture_weights)
     # Next sample from the normal distribution defined by the Gaussian
     samples = _rng.normal(loc=mixture_means[component], 
-                                scale=mixture_stddev[component])
+                          scale=mixture_stddev[component])
     return samples
 
 def update_GMM(data: np.ndarray, mixture_weights: np.ndarray, 
