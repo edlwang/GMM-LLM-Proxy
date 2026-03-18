@@ -83,7 +83,8 @@ def sample_multiGMM(mixture_weights: np.ndarray, mixture_means: np.ndarray,
 
 def update_GMM(data: np.ndarray, mixture_weights: np.ndarray, 
                mixture_means: np.ndarray, mixture_stddev: np.ndarray
-               , epsilon: float = 1e-12
+               , update_mu: bool = False, update_sigma: bool = False,
+               epsilon: float = 1e-12
                ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Update the weights of the Gaussian Mixture Model (GMM) via EM algorithm
 
@@ -105,11 +106,18 @@ def update_GMM(data: np.ndarray, mixture_weights: np.ndarray,
             representing the initial standard deviation of each Gaussian 
             component. The kth entry `mixture_stddev[k]` is the standard 
             deviation of the kth Gaussian component.
+        update_mu: Whether to calculate and return updated mean values.
+        update_sigma: Whether to calculate and return updated standard deviations.
         epsilon: A small positive real number to truncate zero values to so 
             operations are well-conditioned. 
 
     Returns:
-        The updated weights of the Gaussian Mixture Model.
+        A tuple containing:
+            - Updated mixture weights (np.ndarray).
+            - Updated mixture means (np.ndarray). If update_mu is False, 
+              returns the original means.
+            - Updated mixture standard deviations (np.ndarray). If update_sigma 
+              is False, returns the original standard deviations.
     """
     # TODO: Vince wants a figure where variances update too, so the M-step needs
     # to be done, function signature will have to change to compensate; 
@@ -139,6 +147,20 @@ def update_GMM(data: np.ndarray, mixture_weights: np.ndarray,
         max=1 - epsilon, min=epsilon)
     updated_weights[np.isnan(updated_weights)] = epsilon
     updated_weights /= np.sum(updated_weights)
+
+    # Update means if requested
+    if update_mu:
+        updated_means = np.sum(data_posterior * data, axis=1) / np.sum(data_posterior, axis=1)
+    else:
+        updated_means = mixture_means.copy()
+
+    # Update standard deviations if requested
+    if update_sigma:
+        squared_diffs = (data - updated_means[:, np.newaxis])**2
+        updated_vars = np.sum(data_posterior * squared_diffs, axis=1) / np.sum(data_posterior, axis=1)
+        updated_stddev = np.sqrt(updated_vars)
+    else:
+        updated_stddev = mixture_stddev.copy()
 
     return updated_weights, updated_means, updated_stddev
 
@@ -444,7 +466,7 @@ if __name__ == '__main__':
     # np.array([[[1,0], [0,1]], [[1,0], [0,1]], [[1,0], [0,1]]]), 10))
 
     # testing update_GMM function
-    # print(update_GMM(np.array([0.5, 0.9, -1]), np.array([1/3,1/2,1/6]), np.array([-1, 0, 1]), np.array([0.2, 0.2, 0.2])))
+    # print(update_GMM(np.array([0.5, 0.9, -1]), np.array([1/3,1/2,1/6]), np.array([-1, 0, 1]), np.array([0.2, 0.2, 0.2]), True, True))
     #print(update_multiGMM(np.array([[1,0],[0,1], [1,1]]), np.array([1/3,1/2,1/6]), 
     #np.array([[1,1], [1,0], [0,1]]), 
     #np.array([[[1,0], [0,1]], [[1,0], [0,1]], [[1,0], [0,1]]])))
