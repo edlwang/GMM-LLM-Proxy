@@ -83,7 +83,8 @@ def sample_multiGMM(mixture_weights: np.ndarray, mixture_means: np.ndarray,
 
 def update_GMM(data: np.ndarray, mixture_weights: np.ndarray, 
                mixture_means: np.ndarray, mixture_stddev: np.ndarray
-               , epsilon: float = 1e-12) -> np.ndarray:
+               , epsilon: float = 1e-12
+               ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Update the weights of the Gaussian Mixture Model (GMM) via EM algorithm
 
     Given a GMM specified by the weights on each component and the mean and
@@ -138,7 +139,9 @@ def update_GMM(data: np.ndarray, mixture_weights: np.ndarray,
         max=1 - epsilon, min=epsilon)
     updated_weights[np.isnan(updated_weights)] = epsilon
     updated_weights /= np.sum(updated_weights)
-    return updated_weights
+
+    return updated_weights, updated_means, updated_stddev
+
 def update_multiGMM(data: np.ndarray, mixture_weights: np.ndarray, 
                mixture_means: np.ndarray, mixture_cov: np.ndarray
                , epsilon: float = 1e-12) -> np.ndarray:
@@ -195,6 +198,7 @@ def update_multiGMM(data: np.ndarray, mixture_weights: np.ndarray,
     updated_weights[np.isnan(updated_weights)] = epsilon
     updated_weights /= np.sum(updated_weights)
     return updated_weights
+
 def gmm_distance(GMM_1_weights: np.ndarray, GMM_2_weights: np.ndarray
                  ) -> np.floating:
     """Compute the distance between two GMMs to determine nearest neighbors
@@ -311,7 +315,7 @@ def experiment(time_steps: int, mirror_probability: float,
             furthest_pos = np.argmax(distances_to_x)
             temp_rag[furthest_pos] = x
 
-            temp_weight = update_GMM(temp_rag, gmm_weights_history[t-1][j], 
+            temp_weight, _, _ = update_GMM(temp_rag, gmm_weights_history[t-1][j], 
                                      gmm_means, gmm_stddev)
 
             # answer
@@ -325,7 +329,7 @@ def experiment(time_steps: int, mirror_probability: float,
             new_rag[furthest_pos] = y
             rag_t[i] = new_rag
 
-            new_weight = update_GMM(new_rag, gmm_weights_history[t-1][i],
+            new_weight, _, _ = update_GMM(new_rag, gmm_weights_history[t-1][i],
                                     gmm_means, gmm_stddev)
             weight_t[i] = new_weight
         gmm_weights_history.append(weight_t)
