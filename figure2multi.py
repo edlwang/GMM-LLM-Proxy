@@ -21,7 +21,7 @@ if __name__ == '__main__':
     gmm_weights_history = multi_experiment(T, p_mirror, n_neighbors, rag_size, 
                                      initial_weights, gmm_means, gmm_stddev,
                                      seed=15129201)
-    pickle.dump(gmm_weights_history, open('figure2data.p', 'wb'))
+    pickle.dump(gmm_weights_history, open('figure2multidata.p', 'wb'))
     IDs = []
     for t in range(T+1):
         ids = []
