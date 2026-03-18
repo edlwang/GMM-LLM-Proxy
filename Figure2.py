@@ -6,11 +6,11 @@ import pickle
 if __name__ == '__main__':
     # initialization
     p_mirror = 0.4
-    T = 400
+    T = 100
     n_agents = 30
     n_components = n_agents
     n_neighbors = 29
-    rag_size = 5 # RAG-size
+    rag_size = 5
     sigma = 0.2
     epsilon = 1e-12
     initial_weights = epsilon/n_components*np.ones((n_agents, n_components))
@@ -20,7 +20,7 @@ if __name__ == '__main__':
     gmm_stddev = np.array([sigma for _ in range(n_agents)])
     gmm_weights_history = experiment(T, p_mirror, n_neighbors, rag_size, 
                                      initial_weights, gmm_means, gmm_stddev,
-                                     seed=15129201)
+                                     seed=618327487)
     pickle.dump(gmm_weights_history, open('figure2data.p', 'wb'))
     IDs = []
     for t in range(T+1):
