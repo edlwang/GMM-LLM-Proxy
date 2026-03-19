@@ -142,7 +142,8 @@ def update_GMM(data: np.ndarray, mixture_weights: np.ndarray,
         data_posterior[:, idx] = updated_weights * norm.pdf(
             data_point, updated_means, updated_stddev)
         # normalize
-        data_posterior[:, idx] /= (np.sum(data_posterior[:, idx]) + epsilon)
+        if np.sum(data_posterior[:, idx]) > 0:
+            data_posterior[:, idx] /= np.sum(data_posterior[:, idx])
     updated_weights = np.mean(data_posterior, axis=1).clip(
         max=1 - epsilon, min=epsilon)
     updated_weights[np.isnan(updated_weights)] = epsilon
