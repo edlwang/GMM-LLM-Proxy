@@ -269,7 +269,7 @@ def generate_distance_matrix(weight_matrix: np.ndarray) -> np.ndarray:
 def experiment(time_steps: int, mirror_probability: float,
                num_nearest_neighbors: int, RAG_size: int, 
                initial_gmm_weights: np.ndarray, gmm_means: np.ndarray, 
-               gmm_stddev: np.ndarray, seed: int | None = None
+               gmm_stddev: np.ndarray, seed=None
                ) -> list[np.ndarray]:
     """Conduct an instance of the GMM experiment as described in the paper.
 
@@ -297,8 +297,7 @@ def experiment(time_steps: int, mirror_probability: float,
     # TODO: Finish implementation of the experiment loop; rewrite needs to
     # address initialization concerns. 
     global _rng
-    if seed is not None:
-        _rng = np.random.default_rng(seed)
+    _rng = np.random.default_rng(seed)
 
     num_agents, _ = initial_gmm_weights.shape
 
