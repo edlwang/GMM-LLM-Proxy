@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import pickle
 
 if __name__ == '__main__':
-    generate = False
+    generate = True
     save_file = 'figure2.p'
     p_mirror = 0.4
     T = 100
