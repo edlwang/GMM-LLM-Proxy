@@ -8,19 +8,19 @@ import pickle
 
 if __name__ == '__main__':
     generate = False
-    save_file = 'figure3.p'
-    n_replicates = 50
-    T = 80
+    save_file = 'figure4.p'
+    n_replicates = 1
+    T = 200
 
     n_agents_list = [30]
 
-    p_mirror_list = [0]
+    p_mirror_list = [0.2, 0.5, 0.7]
     rag_size = 5
 
     sigma = 0.2
     epsilon = 1e-12
 
-    n_neighbors_list_dict = {30: [1,2,5,10,15,20,25,27,28,29]}
+    n_neighbors_list_dict = {30: [1,5,15,25]}
 
     parameter_dict = {}
     results_dict = {}
@@ -62,51 +62,34 @@ if __name__ == '__main__':
                         n_jobs=-1)(delayed(f)(x) 
                         for x in parameter_dict[n_agents][p_mirror][n_neighbors])
         pickle.dump(results_dict, open(save_file, 'wb'))
-    df = pd.read_pickle('figure3.p')
-    T = 80
-    n_agents = 30
-    p = 0.0
-    k = 10
-    # Compute siloes at each time step
-    OUTPUT = []
-    for p in [0.0]:
-        for k in [1,2,5,10,15,20,25,27,28,29]:
-            for v in np.arange(50):
-                gmm_weights_history = df[30][p][k][v]
-                IDs = []
-                for t in range(T+1):
-                    ids = []
-                    for i in range(n_agents):
-                        ids.append(np.argmax(gmm_weights_history[t][i]))
-                    IDs.append(ids)
-                IDs = pd.DataFrame(IDs)
+    results_dict = pickle.load(open('figure4.p', 'rb'))
+    rows = [0.2, 0.5, 0.7]
+    cols = [1, 5, 15, 25]
 
-                output = [p,k,v,len(set(IDs.iloc[-1])),len(set(IDs.iloc[-2])),len(set(IDs.iloc[-3])),len(set(IDs.iloc[-4]))
-                          ,len(set(IDs.iloc[-5])),np.sum(IDs.iloc[-1]==IDs.iloc[-2])/n_agents,np.sum(IDs.iloc[-2]==IDs.iloc[-3])/n_agents
-                          ,np.sum(IDs.iloc[-3]==IDs.iloc[-4])/n_agents,np.sum(IDs.iloc[-4]==IDs.iloc[-5])/n_agents]
-                OUTPUT.append(output)
-    stat = pd.DataFrame(OUTPUT)
-    stat.columns = ['p','k','Replicate','#Silos_T','#Silos_T-1','#Silos_T-2','#Silos_T-3','#Silos_T-4'
-            ,'Stability_T','Stability_T-1','Stability_T-2','Stability_T-3']
-
-    # Plot
-    df1 = stat[stat['p'] == 0]
-    K = df1['k'].values
-    Silos = df1['#Silos_T'].values + np.random.normal(0,0.1,len(K))
-    mean = pd.DataFrame(np.array(df1.groupby('k').agg({'#Silos_T':'mean'})))[0].values
-    se = pd.DataFrame(np.array(df1.groupby('k').agg({'#Silos_T':'std'})/np.sqrt(50)))[0].values
-    top = mean + 5*se
-    bottom = mean - 5*se
-    
-    plt.figure(figsize=(5,5))
-    plt.plot([1,2,5,10,15,20,25,27,28,29], mean, 'k-', linewidth=3)
-    plt.fill_between([1,2,5,10,15,20,25,27,28,29], bottom, top, facecolor='lightgray')
-    plt.scatter(K, Silos, c='mediumslateblue', s=2)
-    plt.ylim(0,10.5)
-    plt.title('p=0')
-    plt.xlabel('k')
-    plt.ylabel('Number of Silos')
-    plt.savefig('figure3.png')
+    fig, axs = plt.subplots(len(rows), len(cols), figsize=(22,11))
+    for pidx, p in enumerate(rows):
+        for kidx, k in enumerate(cols):
+            gmm_weights_history = results_dict[30][p][k][0]
+            IDs = []
+            T = 200
+            n_agents = 30
+            for t in range(T+1):
+                ids = []
+                for i in range(n_agents):
+                    ids.append(np.argmax(gmm_weights_history[t][i]))
+                IDs.append(ids)
+            IDs = pd.DataFrame(IDs)
+            IDs.plot(y=IDs.columns, ax = axs[pidx, kidx], title=f'', color=['darkseagreen']*30, legend=False, xlabel='', ylabel='')
+            if pidx != len(rows)-1:
+                axs[pidx, kidx].get_xaxis().set_ticks([])
+            if kidx != 0:
+                axs[pidx, kidx].get_yaxis().set_ticks([])
+            axs[pidx, kidx].get_xaxis().set_tick_params(labelsize=15)
+            axs[pidx, kidx].get_yaxis().set_tick_params(labelsize=15)
+    for ax, col in zip(axs[0], cols):
+        ax.set_title(f'k={col}', size='xx-large')
+    for ax, row in zip(axs[:,0], rows):
+        ax.set_ylabel(f'p={row}', size='xx-large')
+    fig.tight_layout()
+    plt.savefig('figure4.png')
     plt.show()
-
-        
