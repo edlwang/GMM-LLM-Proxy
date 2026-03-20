@@ -73,8 +73,8 @@ if __name__ == '__main__':
     # --- Data Loading & Visualization ---
     data = pd.read_pickle(save_file)
     
-    T_threshold = [data[d] for d in d_mu_list[1:]]
-    result = pd.DataFrame(T_threshold, index=d_mu_list[1:])
+    T_threshold = [data[d] for d in d_mu_list]
+    result = pd.DataFrame(T_threshold, index=d_mu_list)
 
     print("\nConvergence Times (Rows = d_mu, Columns = Replicates):")
     print(result)
@@ -83,13 +83,13 @@ if __name__ == '__main__':
     SE = result.std(axis=1)/np.sqrt(n_replicates)
     Top = Mean + 5*SE
     Bottom = Mean - 5*SE
-    result['diff_mu'] = np.linspace(1,6,11)[1:]
+    result['diff_mu'] = np.linspace(1,6,11)
     result['Average'] = Mean
     result['Top'] = Top
     result['Bottom'] = Bottom
 
-    plt.plot(np.linspace(1,6,11)[1:], Mean, 'k-', linewidth=3)
-    plt.fill_between(np.linspace(1,6,11)[1:], Bottom, Top, facecolor='lightgray')
+    plt.plot(np.linspace(1,6,11), Mean, 'k-', linewidth=3)
+    plt.fill_between(np.linspace(1,6,11), Bottom, Top, facecolor='lightgray')
     plt.xlabel('$\Delta \mu$', fontsize=20)
     plt.ylabel('$t^{*}$', fontsize=20)
     plt.savefig('figure7multiCircle.png')
