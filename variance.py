@@ -9,7 +9,7 @@ if __name__ == '__main__':
     T = 100
     n_agents = 30
     n_components = n_agents
-    n_neighbors = 2
+    n_neighbors = 29
     rag_size = 5
     sigma = 0.2
     epsilon = 1e-12
@@ -43,4 +43,17 @@ if __name__ == '__main__':
     plt.title('Unstable Silo')
     plt.xlabel('Time')
     plt.ylabel('Number of Agents in each Silo')
+    plt.show()
+    
+    ans = []
+    for t in range(T):
+        m = 0
+        for i in range(n_agents):
+            w = max(gmm_stddevs_history[t][i])
+            if w > m:
+                m = w
+        ans.append(m)
+    plt.plot(ans)
+    plt.xlabel('Time')
+    plt.ylabel('Maximum of Standard Deviation among all Agents')
     plt.show()

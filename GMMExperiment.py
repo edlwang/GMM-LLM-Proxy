@@ -160,8 +160,8 @@ def update_GMM(data: np.ndarray, mixture_weights: np.ndarray,
         squared_diffs = (data - updated_means[:, np.newaxis])**2
         updated_vars = np.sum(data_posterior * squared_diffs, axis=1) / (np.sum(data_posterior, axis=1) + epsilon)
         updated_stddev = np.sqrt(updated_vars)
-        updated_stddev[updated_stddev < epsilon] = epsilon
-        updated_stddev[np.isnan(updated_stddev)] = epsilon
+        updated_stddev[updated_stddev < 0.01] = 0.01
+        updated_stddev[np.isnan(updated_stddev)] = 0.01
     else:
         updated_stddev = mixture_stddev.copy()
 
@@ -566,6 +566,36 @@ def multi_experiment(time_steps: int, mirror_probability: float,
         gmm_weights_history.append(weight_t)
         gmm_rag_history.append(rag_t)
     return gmm_weights_history
+
+def time_of_convergence(gmm_weights_history: np.ndarray) -> int:
+    """
+    Calculates the last time step before the population reaches a single silo.
+
+    Args:
+        gmm_weights_history (np.ndarray): A 3D array of shape (T+1, n_agents, n_components) 
+                                          containing the GMM weights for all agents over time.
+
+    Returns:
+        int: The last time step (t) where the number of unique clusters was > 1. 
+             Returns -1 if the population never converged to 1 silo.
+    """
+    # Identify the most likely component (cluster ID) for each agent at each time t
+    all_ids = np.argmax(gmm_weights_history, axis=2)
+    
+    # Count unique clusters (silos) at each time step
+    silo_counts = [len(np.unique(row)) for row in all_ids]
+    
+    # Work backward from the end to find the convergence threshold
+    T_max = len(silo_counts) - 1
+    rev_counts = silo_counts[::-1]
+    
+    for index, num in enumerate(rev_counts):
+        if num != 1:
+            return T_max - index
+            
+    return -1
+
+
 if __name__ == '__main__':
     # TODO: We can keep experiments in here, or export this file to implement
     # the running of experiments in other dedicated files
