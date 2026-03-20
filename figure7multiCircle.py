@@ -48,7 +48,7 @@ if __name__ == '__main__':
             gmm_means = np.zeros((n_agents, 2))
             gmm_means[:, 0] = radius * np.cos(angles) # X coordinates
             gmm_means[:, 1] = radius * np.sin(angles) # Y coordinates
-            gmm_stddev = [(sigma**2) * np.eye(n_agents)] * n_agents
+            gmm_stddev = [(sigma**2) * np.eye(2)] * n_agents
             
             for _ in range(n_replicates):
                 all_tasks.append((d_mu, initial_weights, gmm_means, gmm_stddev, seed_generator))
