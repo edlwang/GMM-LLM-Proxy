@@ -20,18 +20,17 @@ def run_single_sim(T, p_mirror, n_neighbors, rag_size, weights, means, stddev, s
 if __name__ == '__main__':
     # --- Parameters ---
     generate = True
-    save_file = 'figure7_convergence.p'
+    save_file = 'figure7multioned.p'
     n_replicates = 50
-    T = 100
+    T = 200
     n_agents = 30
     n_components = n_agents
     p_mirror = 0
     rag_size = 5
-    sigma = 0.2
+    sigma = 1
     epsilon = 1e-12
     n_neighbors = n_agents - 1
-    d_mu_list = np.linspace(1, 6, 11)
-
+    d_mu_list = np.linspace(0.5, 6, 23)
     results_dict = {}
 
     if generate:
@@ -79,13 +78,13 @@ if __name__ == '__main__':
     SE = result.std(axis=1)/np.sqrt(n_replicates)
     Top = Mean + 5*SE
     Bottom = Mean - 5*SE
-    result['diff_mu'] = np.linspace(1,6,11)
+    result['diff_mu'] = d_mu_list
     result['Average'] = Mean
     result['Top'] = Top
     result['Bottom'] = Bottom
 
-    plt.plot(np.linspace(1,6,11), Mean, 'k-', linewidth=3)
-    plt.fill_between(np.linspace(1,6,11), Bottom, Top, facecolor='lightgray')
+    plt.plot(d_mu_list, Mean, 'k-', linewidth=3)
+    plt.fill_between(d_mu_list, Bottom, Top, facecolor='lightgray')
     plt.xlabel('$\Delta \mu$', fontsize=20)
     plt.ylabel('$t^{*}$', fontsize=20)
     plt.savefig('figure7oned.png')

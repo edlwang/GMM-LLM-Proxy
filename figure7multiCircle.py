@@ -20,18 +20,17 @@ def run_single_sim(T, p_mirror, n_neighbors, rag_size, weights, means, stddev, s
 if __name__ == '__main__':
     # --- Parameters ---
     generate = True
-    save_file = 'figure7_convergence.p'
+    save_file = 'figure7multicircle.p'
     n_replicates = 50
-    T = 100
+    T = 400
     n_agents = 30
     n_components = n_agents
     p_mirror = 0
     rag_size = 5
-    sigma = 0.2
+    sigma = 1
     epsilon = 1e-12
     n_neighbors = n_agents - 1
-    d_mu_list = np.linspace(1, 6, 11)
-
+    d_mu_list = np.linspace(0.5, 3, 11) 
     results_dict = {}
 
     if generate:
@@ -43,7 +42,7 @@ if __name__ == '__main__':
             initial_weights = epsilon/n_components * np.ones((n_agents, n_components))
             for i in range(n_agents):
                 initial_weights[i][i] = 1 - epsilon
-            radius = d_mu / np.sqrt(2)
+            radius = d_mu / (2 * np.sin(np.pi / 30))
             angles = np.linspace(0, 2 * np.pi, n_agents, endpoint=False)
             gmm_means = np.zeros((n_agents, 2))
             gmm_means[:, 0] = radius * np.cos(angles) # X coordinates
@@ -88,13 +87,9 @@ if __name__ == '__main__':
     result['Top'] = Top
     result['Bottom'] = Bottom
 
-    plt.plot(np.linspace(1,6,11), Mean, 'k-', linewidth=3)
-    plt.fill_between(np.linspace(1,6,11), Bottom, Top, facecolor='lightgray')
+    plt.plot(d_mu_list, Mean, 'k-', linewidth=3)
+    plt.fill_between(d_mu_list, Bottom, Top, facecolor='lightgray')
     plt.xlabel('$\Delta \mu$', fontsize=20)
     plt.ylabel('$t^{*}$', fontsize=20)
     plt.savefig('figure7multiCircle.png')
     plt.show()
-
-
-
-        

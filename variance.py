@@ -22,6 +22,7 @@ if __name__ == '__main__':
                                      rag_size, initial_weights, initial_gmm_means, initial_gmm_stddevs, False, True,
                                      seed=618327487)
     pickle.dump(gmm_weights_history, open('figure2data_variance.p', 'wb'))
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
     IDs = []
     for t in range(T+1):
         ids = []
@@ -30,12 +31,11 @@ if __name__ == '__main__':
         IDs.append(ids)
     IDs = pd.DataFrame(IDs)
     pickle.dump
-    ax = IDs.plot(y=IDs.columns, 
+    IDs.plot(y=IDs.columns, 
                           title=f'GMM Interaction, p={p_mirror}, k={n_neighbors}, RAG size={rag_size}', 
                           color=['darkseagreen']*n_agents, legend=False, 
-                          xlabel='Time', ylabel='Vertex ID')
-    plt.show()
-
+                          xlabel='Time', ylabel='Vertex ID', ax=ax1)
+    """
     # Elements in silo
     for agent in range(n_agents):
         agent_count = np.sum(IDs.to_numpy() == agent, axis=1)
@@ -44,7 +44,7 @@ if __name__ == '__main__':
     plt.xlabel('Time')
     plt.ylabel('Number of Agents in each Silo')
     plt.show()
-    
+    """
     ans = []
     for t in range(T):
         m = 0
@@ -53,7 +53,12 @@ if __name__ == '__main__':
             if w > m:
                 m = w
         ans.append(m)
-    plt.plot(ans)
-    plt.xlabel('Time')
-    plt.ylabel('Maximum of Standard Deviation among all Agents')
+    ax2.plot(ans) 
+    ax2.set_xlabel('Time')
+    ax2.set_ylabel('Maximum of Standard Deviation among all Agents')
+    ax2.set_title('Maximum of Standard Deviation Over Time')
+
+    # Adjust layout so labels don't overlap
+    plt.tight_layout()
+    plt.savefig("gmm_moving_var_analysis_plots.pdf", format='pdf', bbox_inches='tight')
     plt.show()
