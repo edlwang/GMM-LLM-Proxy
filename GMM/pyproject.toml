@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "gmmexperiment"
+name = "gmm"
 version = "0.1.0"
 description = ""
 authors = ["edlwang <ewang43@jhu.edu>"]
